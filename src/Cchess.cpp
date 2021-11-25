@@ -196,10 +196,8 @@ int Cchess::readFp(FILE* fp) {
 
 int Cchess::init(FILE* fp) {
   int ret = readFp(fp);
-  mapNeighborBlock();
   genPath();
 
-  // printChess(m_chess,3);
   init_flag = 1;
   return ret;
 }
@@ -334,8 +332,8 @@ void Cchess::initMoney(vector<pair<Tnode*, int> >& vecHB) {
   double moneyBag[PACKETS] = {0};
   double total = 0;
   for (int i = 0; i < PACKETS; ++i) {
-    //附近障碍物的百分比+与其他对手的距离和/地图边长/2+0.01(避免除0)
-    moneyBag[i] = vecHB[i].first->neighbor + (double)vecHB[i].second / SIZE / 2 + 0.01;
+    //与其他对手的距离和/地图边长/2+0.01(避免除0)
+    moneyBag[i] = (double)vecHB[i].second / SIZE / 2 + 0.01;
     total += moneyBag[i];
   }
 
@@ -687,16 +685,10 @@ string Cchess::blindGo() {
   for (auto it : vCoop) {
     if (it.type == nodeType_hb && it.owner == m_self) continue;
 
-    if (it.type == nodeType_player) continue;
-
-    if (it.neighbor >= 0.5) continue;
+    if (it.type == nodeType_player || it.type == nodeType_block) continue;
 
     Tnode tmp;
     if (onewayOut(it, tmp)) continue;
-
-    if (it.neighbor == 0) {
-      return calcDirt(*m_pos[m_self], it);
-    }
 
     p = it;
   }
@@ -755,7 +747,7 @@ void Cchess::genPath() {
           if (it.type == nodeType_player && it.owner != u) continue;
 
           //权重 = 基础2 + 目的周边障碍比例*4
-          int weight = int(2 + it.neighbor * 4);
+          int weight = 2;
 
           m_dg[u]->add_edge(m_chess[i][j].id, it.id, weight, false);
         }
@@ -778,8 +770,8 @@ bool Cchess::findTarget(Tnode& p, bool needNear) {
 
     int dis = distanceDG(m_self, *it);
     int value = dis - it->value;
-    cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
-         << endl;
+    // cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
+    //<< endl;
     if (value < min) {
       bool near = true;
       if (needNear) {
