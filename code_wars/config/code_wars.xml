@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="GB2312" ?>
+<root>
+  <game_rule>
+    <wait_time>10</wait_time>
+    <scores_fa>-5</scores_fa>
+    <scores_chai>-5</scores_chai>
+    <send_hb_once>10</send_hb_once>
+    <paynum_hb_once>200</paynum_hb_once>
+    <block_price>5</block_price> 
+    <allow_sys_hb>0</allow_sys_hb>
+    <tick>0</tick>
+    <max_round>2000</max_round>
+  </game_rule>
+  <log>
+    <log_num>3</log_num>
+    <log_size>100</log_size>
+    <enable_debug_log>1</enable_debug_log>
+  </log>
+</root>
