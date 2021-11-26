@@ -715,7 +715,7 @@ Tnode& Cchess::getPathNode(int player, int id) {
 string Cchess::dijkstraGo() {
   string ret;
   Tnode node;  //红包
-  //查找最优点，找到走，没找到瞎走, 比别人近效果不明显
+  //查找最优点，找到走，没找到瞎走
   if (findTarget(node, true)) {
     //获取移动点，计算路径
     Tnode& tar = getPathNode(m_self, node.id);
@@ -766,7 +766,7 @@ bool Cchess::findTarget(Tnode& p, bool needNear) {
   for (auto it : m_redpackets) {
     if (it->owner == m_self) continue;
     Tnode tmp;
-    if (m_setBlock.size() >= 4 && onewayOut(*it, tmp)) continue;
+    if (m_setBlock.size() >= 1 && onewayOut(*it, tmp)) continue;
 
     int dis = distanceDG(m_self, *it);
     int value = dis - it->value;
