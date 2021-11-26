@@ -613,8 +613,8 @@ bool Cchess::findTarget(Tnode& p, bool needNear) {
 
     int dis = distanceDG(m_self, *it);
     int value = dis - it->value;
-    cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
-         << endl;
+    // cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
+    //     << endl;
     if (value < min) {
       bool near = true;
       if (needNear) {
