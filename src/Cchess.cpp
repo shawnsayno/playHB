@@ -695,7 +695,7 @@ string Cchess::setBlock() {
   string blockCmd = budao();
 
   if (blockCmd.empty()) {
-    // blockCmd = dulu();
+    blockCmd = dulu();
   }
 
   return blockCmd;
@@ -758,7 +758,7 @@ string Cchess::dulu(bool pursue) {
     return "";
   }
 
-  if (m_balance[m_self] == m_sortbalance.front() && ((m_sortbalance[0] - m_sortbalance[1]) > 50)) {
+  if (m_balance[m_self] == m_sortbalance.front() && ((m_sortbalance[0] - m_sortbalance[1]) > 100)) {
     //有钱堵第二
     for (int i = 0; i < USER_NUM; ++i) {
       if (m_self == i) continue;
