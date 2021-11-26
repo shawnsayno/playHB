@@ -57,20 +57,161 @@ void split(const char* str, const char* delimiter, int max_tokens, std::vector<s
 
 bool compTnodeNei(Tnode* l, Tnode* r) { return l->neighbor > r->neighbor; }
 
-Cchess::Cchess() : init_flag(0), m_curTurn(0), m_self(-1) {
+void Cchess::pushSpecific(int x, int y, vector<Tnode>& vCoop, nodeType specific) {
+  if (x < 0 || x > SIZE - 1 || y < 0 || y > SIZE - 1) {
+    return;
+  }
+
+  if (nodeType_null == specific) {
+    vCoop.push_back(m_chess[x][y]);
+    return;
+  }
+
+  if (specific == m_chess[x][y].type) {
+    vCoop.push_back(m_chess[x][y]);
+  }
+}
+
+void Cchess::getCoopTag(const Tnode& p, vector<Tnode>& vCoop, int type, nodeType specific) {
+  if (type == 0 || type == 1) {
+    pushSpecific(p.x - 1, p.y, vCoop, specific);
+    pushSpecific(p.x + 1, p.y, vCoop, specific);
+    pushSpecific(p.x, p.y + 1, vCoop, specific);
+    pushSpecific(p.x, p.y - 1, vCoop, specific);
+  }
+  if (type == 0 || type == 2) {
+    pushSpecific(p.x + 1, p.y + 1, vCoop, specific);
+    pushSpecific(p.x - 1, p.y + 1, vCoop, specific);
+    pushSpecific(p.x + 1, p.y - 1, vCoop, specific);
+    pushSpecific(p.x - 1, p.y - 1, vCoop, specific);
+  }
+}
+
+void Cchess::printChess(Tnode chess[SIZE][SIZE], int type) {
+  for (int i = 0; i < SIZE; ++i) {
+    ostringstream o;
+    for (int j = 0; j < SIZE; ++j) {
+      switch (type) {
+        case 1:
+          o << chess[i][j].type << " ";
+          break;
+        case 2:
+          o << chess[i][j].value << " ";
+          break;
+        case 3:
+          o << chess[i][j].neighbor << " ";
+          break;
+      }
+    }
+    cout << o.str().substr(0, o.str().size() - 1) << endl;
+  }
+}
+
+int Cchess::distance(const Tnode& from, const Tnode& to) {
+  return ::abs(from.x - to.x) + ::abs(to.y - from.y);
+}
+
+int Cchess::distanceDG(int player, const Tnode& to) { return m_dg[player]->getValue(to.id); }
+
+Tnode& Cchess::getPathNode(int player, int id) {
+  string path = m_dg[player]->getPath(id);
+
+  vector<string> data;
+  split(path.c_str(), "v", 3, data);
+  int d = atoi(data[1].c_str()) - 1;
+
+  int x = d % SIZE;
+  int y = d / SIZE;
+  return m_chess[x][y];
+}
+
+string Cchess::calcDirt(const Tnode& from, const Tnode& to) {
+  if (from.x == to.x && from.y + 1 == to.y) {
+    return "D";
+  }
+  if (from.x == to.x && from.y == to.y + 1) {
+    return "U";
+  }
+  if (from.x == to.x + 1 && from.y == to.y) {
+    return "L";
+  }
+  if (from.x + 1 == to.x && from.y == to.y) {
+    return "R";
+  }
+  return "S";
+}
+
+bool Cchess::onewayOut(Tnode& from, Tnode& to) {
+  vector<Tnode> vCoop;
+  getCoopTag(from, vCoop);
+
+  int i = 0;
+  for (auto itr : vCoop) {
+    if (itr.type == nodeType_block || (itr.type == nodeType_hb && itr.owner == from.owner)) {
+      ++i;
+    } else {
+      to = itr;
+    }
+  }
+
+  if ((vCoop.size() - i) == 1)  //该点只有1个出口
+  {
+    return true;
+  }
+
+  return false;
+}
+
+bool Cchess::onewayBlock(Tnode& from, Tnode& block) {
+  vector<Tnode> vCoop;
+  getCoopTag(from, vCoop);
+
+  int i = 0;
+  for (auto itr : vCoop) {
+    if ((itr.type == nodeType_block && itr.value == 0) || (itr.type == nodeType_player) ||
+        (itr.type == nodeType_hb && itr.owner == from.owner)) {
+      ++i;
+    } else {
+      block = itr;
+    }
+  }
+
+  if (((vCoop.size() - i) == 1) && block.type != nodeType_hb &&
+      block.type != nodeType_block)  //该点只有1个出口
+  {
+    return true;
+  }
+
+  return false;
+}
+
+Cchess::Cchess() : m_curTurn(0), m_self(-1) {
   memset(m_chess, 0, sizeof(m_chess));
   memset(m_balance, 0, sizeof(m_balance));
 
   for (auto& it : m_dg) {
     it = new Graph_DG(SIZE * SIZE, g_edge);
   }
-};
+}
 
 Cchess::~Cchess() {
   for (auto& it : m_dg) {
     if (it) delete it;
     it = NULL;
   }
+}
+
+int Cchess::init(FILE* fp) {
+  //读文件
+  int ret = readFp(fp);
+
+  //获取相邻权重
+  mapNeighborBlock();
+
+  //生成图
+  genPath();
+
+  return ret;
 }
 
 int Cchess::readFp(FILE* fp) {
@@ -194,29 +335,6 @@ int Cchess::readFp(FILE* fp) {
   return 0;
 }
 
-int Cchess::init(FILE* fp) {
-  int ret = readFp(fp);
-  mapNeighborBlock();
-  genPath();
-
-  // printChess(m_chess,3);
-  init_flag = 1;
-  return ret;
-}
-
-string Cchess::qiangHb() {
-  //移动路线
-  string cmd = setPace();
-
-  //设置障碍
-  string block = setBlock();
-  if (!block.empty()) {
-    cmd = cmd + ";" + block;
-  }
-
-  return cmd;
-}
-
 string Cchess::faHongBao() {
   //初始化空置点
   initGeoSpace();
@@ -246,34 +364,17 @@ string Cchess::faHongBao() {
   return o.str();
 }
 
-void Cchess::pushSpecific(int x, int y, vector<Tnode>& vCoop, nodeType specific) {
-  if (x < 0 || x > SIZE - 1 || y < 0 || y > SIZE - 1) {
-    return;
+string Cchess::qiangHb() {
+  //移动路线
+  string cmd = setPace();
+
+  //设置障碍
+  string block = setBlock();
+  if (!block.empty()) {
+    cmd = cmd + ";" + block;
   }
 
-  if (nodeType_null == specific) {
-    vCoop.push_back(m_chess[x][y]);
-    return;
-  }
-
-  if (specific == m_chess[x][y].type) {
-    vCoop.push_back(m_chess[x][y]);
-  }
-}
-
-void Cchess::getCoopTag(const Tnode& p, vector<Tnode>& vCoop, int type, nodeType specific) {
-  if (type == 0 || type == 1) {
-    pushSpecific(p.x - 1, p.y, vCoop, specific);
-    pushSpecific(p.x + 1, p.y, vCoop, specific);
-    pushSpecific(p.x, p.y + 1, vCoop, specific);
-    pushSpecific(p.x, p.y - 1, vCoop, specific);
-  }
-  if (type == 0 || type == 2) {
-    pushSpecific(p.x + 1, p.y + 1, vCoop, specific);
-    pushSpecific(p.x - 1, p.y + 1, vCoop, specific);
-    pushSpecific(p.x + 1, p.y - 1, vCoop, specific);
-    pushSpecific(p.x - 1, p.y - 1, vCoop, specific);
-  }
+  return cmd;
 }
 
 void Cchess::mapNeighborBlock() {
@@ -304,54 +405,30 @@ void Cchess::mapNeighborBlock() {
   }
 }
 
-void Cchess::printChess(Tnode chess[SIZE][SIZE], int type) {
-  for (int i = 0; i < SIZE; ++i) {
-    ostringstream o;
-    for (int j = 0; j < SIZE; ++j) {
-      switch (type) {
-        case 1:
-          o << chess[i][j].type << " ";
-          break;
-        case 2:
-          o << chess[i][j].value << " ";
-          break;
-        case 3:
-          o << chess[i][j].neighbor << " ";
-          break;
+void Cchess::genPath() {
+  for (int u = 0; u < USER_NUM; ++u) {
+    for (int i = 0; i < SIZE; ++i) {
+      for (int j = 0; j < SIZE; ++j) {
+        vector<Tnode> vCoop;
+        getCoopTag(m_chess[i][j], vCoop);
+        for (auto it : vCoop) {
+          if (nodeType_block == it.type) continue;
+
+          if (it.type == nodeType_hb && it.owner == u) continue;
+
+          if (it.type == nodeType_player && it.owner != u) continue;
+
+          //权重 = 基础2 + 目的周边障碍比例*4
+          int weight = int(2 + it.neighbor * 4);
+
+          m_dg[u]->add_edge(m_chess[i][j].id, it.id, weight, false);
+        }
       }
     }
-    cout << o.str().substr(0, o.str().size() - 1) << endl;
-  }
-}
-
-int Cchess::distance(const Tnode& from, const Tnode& to) {
-  return ::abs(from.x - to.x) + ::abs(to.y - from.y);
-}
-
-int Cchess::distanceDG(int player, const Tnode& to) { return m_dg[player]->getValue(to.id); }
-
-void Cchess::initMoney(vector<pair<Tnode*, int> >& vecHB) {
-  double moneyBag[PACKETS] = {0};
-  double total = 0;
-  for (int i = 0; i < PACKETS; ++i) {
-    //附近障碍物的百分比+与其他对手的距离和/地图边长/2+0.01(避免除0)
-    moneyBag[i] = vecHB[i].first->neighbor + (double)vecHB[i].second / SIZE / 2 + 0.01;
-    total += moneyBag[i];
   }
 
-  //根据权重占比，分配每个红包金额
-  int totalMoney = 0;
-  for (int i = PACKETS - 1; i >= 0; --i) {
-    int num = int((double)MONEY * moneyBag[i] / total);
-    if (num == 0) {
-      num = 1;
-    }
-    if (i == 0) {
-      num = MONEY - totalMoney;
-    }
-    vecHB[i].second = num;
-
-    totalMoney += num;
+  for (int u = 0; u < USER_NUM; ++u) {
+    m_dg[u]->Dijkstra(m_pos[u]->id);
   }
 }
 
@@ -489,6 +566,31 @@ void Cchess::setHBEasy(vector<pair<Tnode*, int> >& vecHB) {
   }
 }
 
+void Cchess::initMoney(vector<pair<Tnode*, int> >& vecHB) {
+  double moneyBag[PACKETS] = {0};
+  double total = 0;
+  for (int i = 0; i < PACKETS; ++i) {
+    //附近障碍物的百分比+与其他对手的距离和/地图边长/2+0.01(避免除0)
+    moneyBag[i] = vecHB[i].first->neighbor + (double)vecHB[i].second / SIZE / 2 + 0.01;
+    total += moneyBag[i];
+  }
+
+  //根据权重占比，分配每个红包金额
+  int totalMoney = 0;
+  for (int i = PACKETS - 1; i >= 0; --i) {
+    int num = int((double)MONEY * moneyBag[i] / total);
+    if (num == 0) {
+      num = 1;
+    }
+    if (i == 0) {
+      num = MONEY - totalMoney;
+    }
+    vecHB[i].second = num;
+
+    totalMoney += num;
+  }
+}
+
 string Cchess::setPace() {
   string pace;
   //没有红包就瞎走 否则选点最短路径
@@ -501,48 +603,102 @@ string Cchess::setPace() {
   return pace;
 }
 
-bool Cchess::onewayOut(Tnode& from, Tnode& to) {
-  vector<Tnode> vCoop;
-  getCoopTag(from, vCoop);
+bool Cchess::findTarget(Tnode& p, bool needNear) {
+  int min = DIS_MAX - MONEY;
+  bool find = false;
+  for (auto it : m_redpackets) {
+    if (it->owner == m_self) continue;
+    Tnode tmp;
+    if (m_setBlock.size() >= 1 && onewayOut(*it, tmp)) continue;
 
-  int i = 0;
-  for (auto itr : vCoop) {
-    if (itr.type == nodeType_block || (itr.type == nodeType_hb && itr.owner == from.owner)) {
-      ++i;
-    } else {
-      to = itr;
+    int dis = distanceDG(m_self, *it);
+    int value = dis - it->value;
+    cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
+         << endl;
+    if (value < min) {
+      bool near = true;
+      if (needNear) {
+        for (int i = 0; i < USER_NUM; ++i) {
+          if (i == m_self) continue;
+          if (i == it->owner) continue;
+          int idis = distanceDG(i, *it);
+          if (idis < dis) {
+            near = false;
+            break;
+          }
+        }
+      }
+
+      if (near) {
+        min = value;
+        p = *it;
+        find = true;
+      }
     }
   }
 
-  if ((vCoop.size() - i) == 1)  //该点只有1个出口
-  {
-    return true;
-  }
-
-  return false;
+  return find;
 }
 
-bool Cchess::onewayBlock(Tnode& from, Tnode& block) {
+string Cchess::blindGo() {
   vector<Tnode> vCoop;
-  getCoopTag(from, vCoop);
+  getCoopTag(*m_pos[m_self], vCoop);
 
-  int i = 0;
-  for (auto itr : vCoop) {
-    if ((itr.type == nodeType_block && itr.value == 0) || (itr.type == nodeType_player) ||
-        (itr.type == nodeType_hb && itr.owner == from.owner)) {
-      ++i;
-    } else {
-      block = itr;
+  Tnode p;
+  p.x = -1;
+  for (auto it : vCoop) {
+    if (it.type == nodeType_hb && it.owner == m_self) continue;
+
+    if (it.type == nodeType_player) continue;
+
+    if (it.neighbor >= 0.5) continue;
+
+    Tnode tmp;
+    if (onewayOut(it, tmp)) continue;
+
+    if (it.neighbor == 0) {
+      return calcDirt(*m_pos[m_self], it);
     }
+
+    p = it;
   }
 
-  if (((vCoop.size() - i) == 1) && block.type != nodeType_hb &&
-      block.type != nodeType_block)  //该点只有1个出口
-  {
-    return true;
+  if (p.x != -1) {
+    return calcDirt(*m_pos[m_self], p);
   }
 
-  return false;
+  return "S";
+}
+
+string Cchess::dijkstraGo() {
+  string ret;
+  Tnode node;  //红包
+  //查找最优点，找到走，没找到瞎走, 比别人近效果不明显
+  if (findTarget(node, true)) {
+    //获取移动点，计算路径
+    Tnode& tar = getPathNode(m_self, node.id);
+    ret = calcDirt(*m_pos[m_self], tar);
+
+    //走路的位置会影响设障碍的位置，需要修改
+    m_pos[m_self]->type = nodeType_null;
+    tar.type = nodeType_player;
+    tar.owner = m_self;
+    m_pos[m_self] = &tar;
+  } else {
+    ret = blindGo();
+  }
+
+  return ret;
+}
+
+string Cchess::setBlock() {
+  string blockCmd = budao();
+
+  if (blockCmd.empty()) {
+    // blockCmd = dulu();
+  }
+
+  return blockCmd;
 }
 
 string Cchess::budao() {
@@ -650,157 +806,4 @@ string Cchess::crazyDu() {
     }
   }
   return "";
-}
-
-string Cchess::setBlock() {
-  string blockCmd = budao();
-
-  if (blockCmd.empty()) {
-    // blockCmd = dulu();
-  }
-
-  return blockCmd;
-}
-
-string Cchess::calcDirt(const Tnode& from, const Tnode& to) {
-  if (from.x == to.x && from.y + 1 == to.y) {
-    return "D";
-  }
-  if (from.x == to.x && from.y == to.y + 1) {
-    return "U";
-  }
-  if (from.x == to.x + 1 && from.y == to.y) {
-    return "L";
-  }
-  if (from.x + 1 == to.x && from.y == to.y) {
-    return "R";
-  }
-  return "S";
-}
-
-string Cchess::blindGo() {
-  vector<Tnode> vCoop;
-  getCoopTag(*m_pos[m_self], vCoop);
-
-  Tnode p;
-  p.x = -1;
-  for (auto it : vCoop) {
-    if (it.type == nodeType_hb && it.owner == m_self) continue;
-
-    if (it.type == nodeType_player) continue;
-
-    if (it.neighbor >= 0.5) continue;
-
-    Tnode tmp;
-    if (onewayOut(it, tmp)) continue;
-
-    if (it.neighbor == 0) {
-      return calcDirt(*m_pos[m_self], it);
-    }
-
-    p = it;
-  }
-
-  if (p.x != -1) {
-    return calcDirt(*m_pos[m_self], p);
-  }
-
-  return "S";
-}
-
-Tnode& Cchess::getPathNode(int player, int id) {
-  string path = m_dg[player]->getPath(id);
-
-  vector<string> data;
-  split(path.c_str(), "v", 3, data);
-  int d = atoi(data[1].c_str()) - 1;
-
-  int x = d % SIZE;
-  int y = d / SIZE;
-  return m_chess[x][y];
-}
-
-string Cchess::dijkstraGo() {
-  string ret;
-  Tnode node;  //红包
-  //查找最优点，找到走，没找到瞎走, 比别人近效果不明显
-  if (findTarget(node, true)) {
-    //获取移动点，计算路径
-    Tnode& tar = getPathNode(m_self, node.id);
-    ret = calcDirt(*m_pos[m_self], tar);
-
-    //走路的位置会影响设障碍的位置，需要修改
-    m_pos[m_self]->type = nodeType_null;
-    tar.type = nodeType_player;
-    tar.owner = m_self;
-    m_pos[m_self] = &tar;
-  } else {
-    ret = blindGo();
-  }
-
-  return ret;
-}
-
-void Cchess::genPath() {
-  for (int u = 0; u < USER_NUM; ++u) {
-    for (int i = 0; i < SIZE; ++i) {
-      for (int j = 0; j < SIZE; ++j) {
-        vector<Tnode> vCoop;
-        getCoopTag(m_chess[i][j], vCoop);
-        for (auto it : vCoop) {
-          if (nodeType_block == it.type) continue;
-
-          if (it.type == nodeType_hb && it.owner == u) continue;
-
-          if (it.type == nodeType_player && it.owner != u) continue;
-
-          //权重 = 基础2 + 目的周边障碍比例*4
-          int weight = int(2 + it.neighbor * 4);
-
-          m_dg[u]->add_edge(m_chess[i][j].id, it.id, weight, false);
-        }
-      }
-    }
-  }
-
-  for (int u = 0; u < USER_NUM; ++u) {
-    m_dg[u]->Dijkstra(m_pos[u]->id);
-  }
-}
-
-bool Cchess::findTarget(Tnode& p, bool needNear) {
-  int min = DIS_MAX - MONEY;
-  bool find = false;
-  for (auto it : m_redpackets) {
-    if (it->owner == m_self) continue;
-    Tnode tmp;
-    if (m_setBlock.size() >= 4 && onewayOut(*it, tmp)) continue;
-
-    int dis = distanceDG(m_self, *it);
-    int value = dis - it->value;
-    cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
-         << endl;
-    if (value < min) {
-      bool near = true;
-      if (needNear) {
-        for (int i = 0; i < USER_NUM; ++i) {
-          if (i == m_self) continue;
-          if (i == it->owner) continue;
-          int idis = distanceDG(i, *it);
-          if (idis < dis) {
-            near = false;
-            break;
-          }
-        }
-      }
-
-      if (near) {
-        min = value;
-        p = *it;
-        find = true;
-      }
-    }
-  }
-
-  return find;
 }

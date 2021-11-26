@@ -1,6 +1,3 @@
-// playHB.cpp : 定义控制台应用程序的入口点。
-//
-
 #include "Cchess.h"
 
 static const auto _____ = []() {
@@ -13,10 +10,10 @@ int main(int argc, const char *argv[]) {
   Cchess mychess;
   FILE *fp = stdin;  //默认使用标准输入
   // FILE *fp = fopen("../start_map.txt", "r");
-  // FILE *fp = fopen("D:\\workspace\\result\\cppwork\\playHB\\start_map.txt", "r");
+  // FILE *fp = fopen("D:\\playHB\\start_map.txt", "r");
   // //调试输入内容用
-  int nRet = mychess.init(fp);
 
+  int nRet = mychess.init(fp);
   if (nRet) {
     std::cout << nRet;
   } else {

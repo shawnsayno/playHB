@@ -57,22 +57,16 @@ class Cchess {
 
   ~Cchess();
 
-  //读文件
-  int readFp(FILE* fp);
-
   //初始化
   int init(FILE* fp);
-
-  //抢红包流程
-  string qiangHb();
 
   //发红包流程
   string faHongBao();
 
- protected:
-  //获取领接矩阵
-  void mapNeighborBlock();
+  //抢红包流程
+  string qiangHb();
 
+ protected:
   //获取指定类型或者空的点
   void pushSpecific(int x, int y, vector<Tnode>& vCoop, nodeType specific);
 
@@ -86,8 +80,36 @@ class Cchess {
   //图距离
   int distanceDG(int player, const Tnode& to);
 
-  //构造红包金额
-  void initMoney(vector<pair<Tnode*, int> >& vecHB);
+  //打印棋盘
+  void printChess(Tnode chess[SIZE][SIZE], int type);
+
+  //获取通向路径点
+  Tnode& getPathNode(int player, int id);
+
+  //计算方向
+  string calcDirt(const Tnode& from, const Tnode& to);
+
+  //找到目标点, needNear比其他对手近
+  bool findTarget(Tnode& p, bool needNear = true);
+
+  //找到障碍点
+  bool findBlockNode(Tnode& p, Tnode& tar);
+
+  //是否是只有一个出口，如果是返回出口
+  bool onewayOut(Tnode& from, Tnode& to);
+
+  //是否可以堵住，如果是返回堵住位置
+  bool onewayBlock(Tnode& from, Tnode& block);
+
+ protected:
+  //读文件
+  int readFp(FILE* fp);
+
+  //获取领接矩阵
+  void mapNeighborBlock();
+
+  //生成图加权边
+  void genPath();
 
   //初始空置点
   void initGeoSpace();
@@ -98,20 +120,23 @@ class Cchess {
   //简易设红包点位
   void setHBEasy(vector<pair<Tnode*, int> >& vecHB);
 
+  //构造红包金额
+  void initMoney(vector<pair<Tnode*, int> >& vecHB);
+
   //设置走路位置
   string setPace();
 
-  //是否是只有一个出口，如果是返回出口
-  bool onewayOut(Tnode& from, Tnode& to);
+  //随机走
+  string blindGo();
 
-  //是否可以堵住，如果是返回堵住位置
-  bool onewayBlock(Tnode& from, Tnode& block);
+  //最短路径走
+  string dijkstraGo();
+
+  //设置障碍
+  string setBlock();
 
   //补刀堵
   string budao();
-
-  //找到障碍点
-  bool findBlockNode(Tnode& p, Tnode& tar);
 
   //堵路
   string dulu(bool pursue = false);
@@ -119,42 +144,16 @@ class Cchess {
   //疯狂堵路
   string crazyDu();
 
-  //设置障碍
-  string setBlock();
-
-  //打印棋盘
-  void printChess(Tnode chess[SIZE][SIZE], int type);
-
-  //计算方向
-  string calcDirt(const Tnode& from, const Tnode& to);
-
-  //随机走
-  string blindGo();
-
-  //获取通向路径点
-  Tnode& getPathNode(int player, int id);
-
-  //最短路径走
-  string dijkstraGo();
-
-  //生成图加权边
-  void genPath();
-
-  //找到目标点, needNear比其他对手近
-  bool findTarget(Tnode& p, bool needNear = true);
-
  private:
-  int init_flag;
+  Tnode m_chess[SIZE][SIZE];  //地图
+  int m_curTurn;              //当前轮数
+  int m_self;                 //自己的角色
+  int m_balance[USER_NUM];    //玩家当前余额
+  Tnode* m_pos[USER_NUM];     //玩家当前位置
 
-  Tnode m_chess[SIZE][SIZE];    //地图
-  int m_curTurn;                //当前轮数
-  int m_self;                   //自己的角色
-  int m_balance[USER_NUM];      //玩家当前余额
-  Tnode* m_pos[USER_NUM];       //玩家当前位置
   vector<Tnode*> m_redpackets;  //地图上全部红包
-
-  vector<Tnode*> m_geo;       //地形区域
-  vector<Tnode*> m_setBlock;  //玩家设置的障碍
-  vector<int> m_sortbalance;  //排序的余额
-  Graph_DG* m_dg[USER_NUM];   //加权路径图
+  vector<Tnode*> m_geo;         //地形空置区域
+  vector<Tnode*> m_setBlock;    //玩家设置的障碍
+  vector<int> m_sortbalance;    //排序的余额
+  Graph_DG* m_dg[USER_NUM];     //加权路径图
 };
