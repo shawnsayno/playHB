@@ -4,10 +4,8 @@
 
 #define DIS_MAX 999999999
 
-using namespace std;
-
 struct Dis {
-  string path;
+  std::string path;
   int value;
   bool visit;
   Dis() {
@@ -19,40 +17,40 @@ struct Dis {
 
 class Graph_DG {
  private:
-  int vexnum;  //Í¼µÄ¶¥µã¸öÊı
-  int edge;    //Í¼µÄ±ßÊı
-  int **arc;   //ÁÚ½Ó¾ØÕó
-  Dis *dis;    //Â·¾¶
+  int vexnum;  //å›¾çš„é¡¶ç‚¹ä¸ªæ•°
+  int edge;    //å›¾çš„è¾¹æ•°
+  int **arc;   //é‚»æ¥çŸ©é˜µ
+  Dis *dis;    //è·¯å¾„
 
  public:
-  //¹¹Ôìº¯Êı
+  //æ„é€ å‡½æ•°
   Graph_DG(int vexnum, int edge);
 
-  //Îö¹¹º¯Êı
+  //ææ„å‡½æ•°
   ~Graph_DG();
 
-  // ÅĞ¶ÏÎÒÃÇÃ¿´ÎÊäÈëµÄµÄ±ßµÄĞÅÏ¢ÊÇ·ñºÏ·¨
-  //¶¥µã´Ó1¿ªÊ¼±àºÅ
+  // åˆ¤æ–­æˆ‘ä»¬æ¯æ¬¡è¾“å…¥çš„çš„è¾¹çš„ä¿¡æ¯æ˜¯å¦åˆæ³•
+  //é¡¶ç‚¹ä»1å¼€å§‹ç¼–å·
   bool check_edge_value(int start, int end, int weight);
 
-  //Ôö¼Ó±ßÈ¨ÖØ
+  //å¢åŠ è¾¹æƒé‡
   void add_edge(int start, int end, int weight, bool bothway = true);
 
-  //´´½¨Í¼
+  //åˆ›å»ºå›¾
   void createGraph();
 
-  //´òÓ¡ÁÚ½Ó¾ØÕó
+  //æ‰“å°é‚»æ¥çŸ©é˜µ
   void print();
 
-  //Çó×î¶ÌÂ·¾¶
+  //æ±‚æœ€çŸ­è·¯å¾„
   void Dijkstra(int begin);
 
-  //´òÓ¡×î¶ÌÂ·¾¶
+  //æ‰“å°æœ€çŸ­è·¯å¾„
   void print_path();
 
-  //»ñÈ¡³¤¶È
+  //è·å–é•¿åº¦
   int getValue(int pos);
 
-  //»ñÈ¡Â·¾¶
-  string getPath(int pos);
+  //è·å–è·¯å¾„
+  std::string getPath(int pos);
 };

@@ -1,24 +1,26 @@
 #include "Dijkstra.h"
 
-//¹¹Ôìº¯Êı
+using namespace std;
+
+//æ„é€ å‡½æ•°
 Graph_DG::Graph_DG(int vexnum, int edge) {
-  //³õÊ¼»¯¶¥µãÊıºÍ±ßÊı
+  //åˆå§‹åŒ–é¡¶ç‚¹æ•°å’Œè¾¹æ•°
   this->vexnum = vexnum;
   this->edge = edge;
-  //ÎªÁÚ½Ó¾ØÕó¿ª±Ù¿Õ¼äºÍ¸³³õÖµ
+  //ä¸ºé‚»æ¥çŸ©é˜µå¼€è¾Ÿç©ºé—´å’Œèµ‹åˆå€¼
   arc = new int *[this->vexnum];
 
   for (int i = 0; i < this->vexnum; i++) {
     arc[i] = new int[this->vexnum];
 
     for (int k = 0; k < this->vexnum; k++) {
-      //ÁÚ½Ó¾ØÕó³õÊ¼»¯ÎªÎŞÇî´ó
+      //é‚»æ¥çŸ©é˜µåˆå§‹åŒ–ä¸ºæ— ç©·å¤§
       arc[i][k] = DIS_MAX;
     }
   }
 }
 
-//Îö¹¹º¯Êı
+//ææ„å‡½æ•°
 Graph_DG::~Graph_DG() {
   delete[] dis;
 
@@ -29,8 +31,8 @@ Graph_DG::~Graph_DG() {
   delete[] arc;
 }
 
-// ÅĞ¶ÏÎÒÃÇÃ¿´ÎÊäÈëµÄµÄ±ßµÄĞÅÏ¢ÊÇ·ñºÏ·¨
-//¶¥µã´Ó1¿ªÊ¼±àºÅ
+// åˆ¤æ–­æˆ‘ä»¬æ¯æ¬¡è¾“å…¥çš„çš„è¾¹çš„ä¿¡æ¯æ˜¯å¦åˆæ³•
+//é¡¶ç‚¹ä»1å¼€å§‹ç¼–å·
 bool Graph_DG::check_edge_value(int start, int end, int weight) {
   if (start < 1 || end < 1 || start > vexnum || end > vexnum || weight < 0) {
     return false;
@@ -47,7 +49,7 @@ void Graph_DG::add_edge(int start, int end, int weight, bool bothway) {
 }
 
 void Graph_DG::createGraph() {
-  cout << "ÇëÊäÈëÃ¿Ìõ±ßµÄÆğµãºÍÖÕµã£¨¶¥µã±àºÅ´Ó1¿ªÊ¼£©ÒÔ¼°ÆäÈ¨ÖØ" << endl;
+  cout << "è¯·è¾“å…¥æ¯æ¡è¾¹çš„èµ·ç‚¹å’Œç»ˆç‚¹ï¼ˆé¡¶ç‚¹ç¼–å·ä»1å¼€å§‹ï¼‰ä»¥åŠå…¶æƒé‡" << endl;
   int start;
   int end;
   int weight;
@@ -56,32 +58,32 @@ void Graph_DG::createGraph() {
   while (count != this->edge) {
     cin >> start >> end >> weight;
 
-    //Ê×ÏÈÅĞ¶Ï±ßµÄĞÅÏ¢ÊÇ·ñºÏ·¨
+    //é¦–å…ˆåˆ¤æ–­è¾¹çš„ä¿¡æ¯æ˜¯å¦åˆæ³•
     while (!this->check_edge_value(start, end, weight)) {
-      cout << "ÊäÈëµÄ±ßµÄĞÅÏ¢²»ºÏ·¨£¬ÇëÖØĞÂÊäÈë" << endl;
+      cout << "è¾“å…¥çš„è¾¹çš„ä¿¡æ¯ä¸åˆæ³•ï¼Œè¯·é‡æ–°è¾“å…¥" << endl;
       cin >> start >> end >> weight;
     }
 
-    //¶ÔÁÚ½Ó¾ØÕó¶ÔÓ¦ÉÏµÄµã¸³Öµ
+    //å¯¹é‚»æ¥çŸ©é˜µå¯¹åº”ä¸Šçš„ç‚¹èµ‹å€¼
     arc[start - 1][end - 1] = weight;
-    //ÎŞÏòÍ¼Ìí¼ÓÉÏÕâĞĞ´úÂë
+    //æ— å‘å›¾æ·»åŠ ä¸Šè¿™è¡Œä»£ç 
     arc[end - 1][start - 1] = weight;
     ++count;
   }
 }
 
 void Graph_DG::print() {
-  cout << "Í¼µÄÁÚ½Ó¾ØÕóÎª£º" << endl;
-  int count_row = 0;  //´òÓ¡ĞĞµÄ±êÇ©
-  int count_col = 0;  //´òÓ¡ÁĞµÄ±êÇ©
+  cout << "å›¾çš„é‚»æ¥çŸ©é˜µä¸ºï¼š" << endl;
+  int count_row = 0;  //æ‰“å°è¡Œçš„æ ‡ç­¾
+  int count_col = 0;  //æ‰“å°åˆ—çš„æ ‡ç­¾
 
-  //¿ªÊ¼´òÓ¡
+  //å¼€å§‹æ‰“å°
   while (count_row != this->vexnum) {
     count_col = 0;
 
     while (count_col != this->vexnum) {
       if (arc[count_row][count_col] == DIS_MAX) {
-        cout << "¡Ş"
+        cout << "âˆ"
              << " ";
       } else {
         cout << arc[count_row][count_col] << " ";
@@ -96,25 +98,25 @@ void Graph_DG::print() {
 }
 
 void Graph_DG::Dijkstra(int begin) {
-  //Ê×ÏÈ³õÊ¼»¯ÎÒÃÇµÄdisÊı×é
+  //é¦–å…ˆåˆå§‹åŒ–æˆ‘ä»¬çš„disæ•°ç»„
   dis = new Dis[this->vexnum];
   int i;
 
   for (i = 0; i < this->vexnum; i++) {
-    //ÉèÖÃµ±Ç°µÄÂ·¾¶
+    //è®¾ç½®å½“å‰çš„è·¯å¾„
     dis[i].path = "v" + to_string(begin) + "v" + to_string(i + 1);
     dis[i].value = arc[begin - 1][i];
   }
 
-  //ÉèÖÃÆğµãµÄµ½ÆğµãµÄÂ·¾¶Îª0
+  //è®¾ç½®èµ·ç‚¹çš„åˆ°èµ·ç‚¹çš„è·¯å¾„ä¸º0
   dis[begin - 1].value = 0;
   dis[begin - 1].visit = true;
   int count = 1;
 
-  //¼ÆËãÊ£ÓàµÄ¶¥µãµÄ×î¶ÌÂ·¾¶£¨Ê£Óàthis->vexnum-1¸ö¶¥µã£©
+  //è®¡ç®—å‰©ä½™çš„é¡¶ç‚¹çš„æœ€çŸ­è·¯å¾„ï¼ˆå‰©ä½™this->vexnum-1ä¸ªé¡¶ç‚¹ï¼‰
   while (count != this->vexnum) {
-    // tempÓÃÓÚ±£´æµ±Ç°disÊı×éÖĞ×îĞ¡µÄÄÇ¸öÏÂ±ê
-    // min¼ÇÂ¼µÄµ±Ç°µÄ×îĞ¡Öµ
+    // tempç”¨äºä¿å­˜å½“å‰disæ•°ç»„ä¸­æœ€å°çš„é‚£ä¸ªä¸‹æ ‡
+    // minè®°å½•çš„å½“å‰çš„æœ€å°å€¼
     int temp = 0;
     int min = DIS_MAX;
 
@@ -126,15 +128,15 @@ void Graph_DG::Dijkstra(int begin) {
     }
 
     // cout << temp + 1 << "  "<<min << endl;
-    //°Ñtemp¶ÔÓ¦µÄ¶¥µã¼ÓÈëµ½ÒÑ¾­ÕÒµ½µÄ×î¶ÌÂ·¾¶µÄ¼¯ºÏÖĞ
+    //æŠŠtempå¯¹åº”çš„é¡¶ç‚¹åŠ å…¥åˆ°å·²ç»æ‰¾åˆ°çš„æœ€çŸ­è·¯å¾„çš„é›†åˆä¸­
     dis[temp].visit = true;
     ++count;
 
     for (i = 0; i < this->vexnum; i++) {
-      //×¢ÒâÕâÀïµÄÌõ¼şarc[temp][i]!=INT_MAX±ØĞë¼Ó£¬²»È»»á³öÏÖÒç³ö£¬´Ó¶øÔì³É³ÌĞòÒì³£
+      //æ³¨æ„è¿™é‡Œçš„æ¡ä»¶arc[temp][i]!=INT_MAXå¿…é¡»åŠ ï¼Œä¸ç„¶ä¼šå‡ºç°æº¢å‡ºï¼Œä»è€Œé€ æˆç¨‹åºå¼‚å¸¸
       if (!dis[i].visit && arc[temp][i] != DIS_MAX &&
           (dis[temp].value + arc[temp][i]) < dis[i].value) {
-        //Èç¹ûĞÂµÃµ½µÄ±ß¿ÉÒÔÓ°ÏìÆäËûÎª·ÃÎÊµÄ¶¥µã£¬ÄÇ¾Í¾Í¸üĞÂËüµÄ×î¶ÌÂ·¾¶ºÍ³¤¶È
+        //å¦‚æœæ–°å¾—åˆ°çš„è¾¹å¯ä»¥å½±å“å…¶ä»–ä¸ºè®¿é—®çš„é¡¶ç‚¹ï¼Œé‚£å°±å°±æ›´æ–°å®ƒçš„æœ€çŸ­è·¯å¾„å’Œé•¿åº¦
         dis[i].value = dis[temp].value + arc[temp][i];
         dis[i].path = dis[temp].path + "v" + to_string(i + 1);
       }
@@ -143,13 +145,13 @@ void Graph_DG::Dijkstra(int begin) {
 }
 
 void Graph_DG::print_path() {
-  cout << "ÎªÆğµãµÄÍ¼µÄ×î¶ÌÂ·¾¶Îª£º" << endl;
+  cout << "ä¸ºèµ·ç‚¹çš„å›¾çš„æœ€çŸ­è·¯å¾„ä¸ºï¼š" << endl;
 
   for (int i = 0; i != this->vexnum; i++) {
     if (dis[i].value != DIS_MAX) {
       cout << dis[i].path << "=" << dis[i].value << endl;
     } else {
-      cout << dis[i].path << "ÊÇÎŞ×î¶ÌÂ·¾¶µÄ" << endl;
+      cout << dis[i].path << "æ˜¯æ— æœ€çŸ­è·¯å¾„çš„" << endl;
     }
   }
 }

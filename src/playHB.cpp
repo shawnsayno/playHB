@@ -8,31 +8,32 @@ static const auto _____ = []() {
 
 int main(int argc, const char *argv[]) {
   Cchess mychess;
-  FILE *fp = stdin;  //Ä¬ÈÏÊ¹ÓÃ±ê×¼ÊäÈë
+  FILE *fp = stdin;  //é»˜è®¤ä½¿ç”¨æ ‡å‡†è¾“å…¥
   // FILE *fp = fopen("../start_map.txt", "r");
   // FILE *fp = fopen("D:\\playHB\\start_map.txt", "r");
-  // //µ÷ÊÔÊäÈëÄÚÈİÓÃ
+  // //è°ƒè¯•è¾“å…¥å†…å®¹ç”¨
 
   int nRet = mychess.init(fp);
   if (nRet) {
     std::cout << nRet;
   } else {
-    //ÇÀÓë·¢Í¨¹ıÃüÁîĞĞ²ÎÊı¿ØÖÆ
+    //æŠ¢ä¸å‘é€šè¿‡å‘½ä»¤è¡Œå‚æ•°æ§åˆ¶
     string cmd = argv[1];
 
     if (cmd.compare("F") == 0) {
       std::cout << mychess.faHongBao().c_str() << "\n";
+
     } else if (cmd.compare("Q") == 0) {
       std::cout << mychess.qiangHb().c_str() << "\n";
-      //·ÅÖÃÕÏ°­²ßÂÔĞèÒªÍæ¼Ò×Ô¼º²¹³ä
+      
     } else {
-      std::cout << "ÇëÊäÈëÍæ·¨ÀàĞÍ£ºF-·¢ºì°ü Q-ÇÀºì°ü" << endl;
+      std::cout << "è¯·è¾“å…¥ç©æ³•ç±»å‹ï¼šF-å‘çº¢åŒ… Q-æŠ¢çº¢åŒ…" << endl;
       return -1;
     }
   }
 
   if (fp != stdin) {
-    fclose(fp);  //Èç¹ûÊ¹ÓÃÎÄ¼ş×÷ÎªÊäÈë£¬ĞèÒª¹Ø±ÕÎÄ¼ş¾ä±ú
+    fclose(fp);  //å¦‚æœä½¿ç”¨æ–‡ä»¶ä½œä¸ºè¾“å…¥ï¼Œéœ€è¦å…³é—­æ–‡ä»¶å¥æŸ„
   }
   return 0;
 }

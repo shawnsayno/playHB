@@ -55,8 +55,6 @@ void split(const char* str, const char* delimiter, int max_tokens, std::vector<s
   return;
 }
 
-bool compTnodeNei(Tnode* l, Tnode* r) { return l->neighbor > r->neighbor; }
-
 void Cchess::pushSpecific(int x, int y, vector<Tnode>& vCoop, nodeType specific) {
   if (x < 0 || x > SIZE - 1 || y < 0 || y > SIZE - 1) {
     return;
@@ -117,7 +115,7 @@ Tnode& Cchess::getPathNode(int player, int id) {
   string path = m_dg[player]->getPath(id);
 
   vector<string> data;
-  split(path.c_str(), "v", 3, data);
+  split(data, path.c_str(), 'v');
   int d = atoi(data[1].c_str()) - 1;
 
   int x = d % SIZE;
@@ -220,29 +218,24 @@ int Cchess::readFp(FILE* fp) {
   }
 
   char line[7 * SIZE] = {0};
-  char* ret = fgets(line, sizeof(line) - 1, fp);
-  int lineNo = 0;
+  int lineNo = -1;
 
-  while (ret != NULL && strlen(line) > 0) {
-    //前几行没有空格
+  while (NULL != fgets(line, sizeof(line) - 1, fp) && strlen(line) > 0) {
+    lineNo++;
+    string tmp = line;
+    InplaceTrim(tmp);
+
     if (lineNo == 0) {
-      string tmp = line;
-      tmp.erase(0, tmp.find_first_not_of(" "));
-      tmp.erase(tmp.find_last_not_of(" ") + 1);
       m_self = atoi(tmp.substr(1).c_str()) - 1;
 
       if (m_self < 0 || m_self > USER_NUM) {
         return -3;
       }
     } else if (lineNo == 1) {
-      string tmp = line;
-      tmp.erase(0, tmp.find_first_not_of(" "));
-      tmp.erase(tmp.find_last_not_of(" ") + 1);
       m_curTurn = atoi(tmp.substr(1).c_str());
     } else if (lineNo == 2) {
-      string tmp = line;
       vector<string> result;
-      split(tmp.c_str(), ";", SIZE, result);
+      split(result, tmp.c_str(), ';');
 
       if (result.size() < USER_NUM) {
         printf("size=%lu\n", result.size());
@@ -257,17 +250,19 @@ int Cchess::readFp(FILE* fp) {
         m_balance[i] = atoi(result[i].substr(3).c_str());
         m_sortbalance.push_back(m_balance[i]);
       }
+
       ::sort(m_sortbalance.begin(), m_sortbalance.end(), [](int l, int r) { return l > r; });
     } else {
-      string tmp = line;
       vector<string> result;
-      split(tmp.c_str(), " ", SIZE, result);
+      split(result, tmp.c_str(), ' ');
+
       int chessNo = lineNo - 3;
 
       for (int i = 0; i < SIZE; i++) {
-        m_chess[i][chessNo].x = i;
-        m_chess[i][chessNo].y = chessNo;
-        m_chess[i][chessNo].id = chessNo * SIZE + i + 1;
+        Tnode& node = m_chess[i][chessNo];
+        node.x = i;
+        node.y = chessNo;
+        node.id = chessNo * SIZE + i + 1;
 
         switch (result[i][0]) {
           case '#': {
@@ -275,31 +270,29 @@ int Cchess::readFp(FILE* fp) {
           }
           case 'p':
           case 'P': {
-            int m = atoi(result[i].substr(1).c_str()) - 1;
+            int player = atoi(result[i].substr(1).c_str()) - 1;
 
-            if (m < 0 || m > USER_NUM) {
+            if (player < 0 || player > USER_NUM) {
               return -1;
             }
 
-            Tnode& node = m_chess[i][chessNo];
             node.type = nodeType_player;
-            node.owner = m;
+            node.owner = player;
 
-            m_pos[m] = &node;
+            m_pos[player] = &node;
             break;
           }
           case 'r':
           case 'R': {
-            int m = atoi(result[i].substr(1).c_str()) - 1;
+            int player = atoi(result[i].substr(1).c_str()) - 1;
 
-            if (m < -1 || m > USER_NUM) {
+            if (player < -1 || player > USER_NUM) {
               return -8;
             }
 
-            Tnode& node = m_chess[i][chessNo];
             node.type = nodeType_hb;
             node.value = atoi(result[i].substr(3).c_str());
-            node.owner = m;
+            node.owner = player;
 
             m_redpackets.push_back(&node);
             break;
@@ -307,7 +300,6 @@ int Cchess::readFp(FILE* fp) {
 
           case 'b':
           case 'B': {
-            Tnode& node = m_chess[i][chessNo];
             node.type = nodeType_block;
             node.value = atoi(result[i].substr(1).c_str());
 
@@ -321,15 +313,11 @@ int Cchess::readFp(FILE* fp) {
       }
     }
 
-    {
-      if (lineNo == (3 + SIZE - 1)) {
-        break;
-      }
-
-      memset(line, 0, sizeof(line));
-      ret = fgets(line, sizeof(line) - 1, fp);
-      lineNo++;
+    if (lineNo == (3 + SIZE - 1)) {
+      break;
     }
+
+    memset(line, 0, sizeof(line));
   }
 
   return 0;
@@ -405,7 +393,59 @@ void Cchess::mapNeighborBlock() {
   }
 }
 
+void Cchess::initGraph(int user) {
+  for (int i = 0; i < SIZE; ++i) {
+    for (int j = 0; j < SIZE; ++j) {
+      vector<Tnode> vCoop;
+      getCoopTag(m_chess[i][j], vCoop);
+      for (auto it : vCoop) {
+        if (nodeType_block == it.type) continue;
+
+        if (it.type == nodeType_hb && it.owner == user) continue;
+
+        if (it.type == nodeType_player && it.owner != user) continue;
+
+        //权重 = 基础2 + 目的周边障碍比例*4
+        int weight = int(2 + it.neighbor * 4);
+
+        m_dg[user]->add_edge(m_chess[i][j].id, it.id, weight, false);
+      }
+    } 
+  }
+}
+
+void Cchess::dj(int user) {
+  m_dg[user]->Dijkstra(m_pos[user]->id);
+}
+
+
 void Cchess::genPath() {
+  vector<thread> vecThread;
+  for(int index = 0;index < USER_NUM; ++index)
+  {
+    std::thread tThread(&Cchess::initGraph, this, index);
+    vecThread.push_back(std::move(tThread));
+  }
+
+  for(auto& it : vecThread)
+  {
+    it.join();
+  }
+
+  vecThread.clear();
+
+  for(int index = 0;index < USER_NUM; ++index)
+  {
+    std::thread tThread(&Cchess::dj, this, index);
+    vecThread.push_back(std::move(tThread));
+  }
+
+  for(auto& it : vecThread)
+  {
+    it.join();
+  }
+  
+  #if 0
   for (int u = 0; u < USER_NUM; ++u) {
     for (int i = 0; i < SIZE; ++i) {
       for (int j = 0; j < SIZE; ++j) {
@@ -430,6 +470,7 @@ void Cchess::genPath() {
   for (int u = 0; u < USER_NUM; ++u) {
     m_dg[u]->Dijkstra(m_pos[u]->id);
   }
+  #endif
 }
 
 void Cchess::initGeoSpace() {
@@ -442,7 +483,7 @@ void Cchess::initGeoSpace() {
   }
 
   //相邻障碍多的在前
-  ::sort(m_geo.begin(), m_geo.end(), compTnodeNei);
+  ::sort(m_geo.begin(), m_geo.end(), [](Tnode* l, Tnode* r) { return l->neighbor > r->neighbor; });
 }
 
 void Cchess::setHongbao(vector<pair<Tnode*, int> >& vecHB, int level) {
