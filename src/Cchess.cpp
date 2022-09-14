@@ -4,56 +4,9 @@
 
 #include <algorithm>
 #include <sstream>
+#include <thread>
+#include "comm.h"
 
-bool isspace(char a) { return a == ' '; }
-
-void split(const char* str, const char* delimiter, int max_tokens, std::vector<std::string>& data) {
-  data.clear();
-
-  // 去掉前面的空格
-  while (isspace(*str)) {
-    ++str;
-  }
-
-  const char* s = strstr(str, delimiter);
-
-  if (s) {
-    int del_len = strlen(delimiter);
-
-    do {
-      int len = s - str;
-      int rel_len = len;
-
-      // 去掉后面的空格
-      for (const char* p = s - 1; p > str && isspace(*p); --p) {
-        --rel_len;
-      }
-
-      if (rel_len) data.push_back(std::string(str, rel_len));
-      str = s + del_len;
-
-      // 去掉前面的空格
-      while (isspace(*str)) {
-        ++str;
-      }
-
-      s = strstr(str, delimiter);
-    } while (--max_tokens && s && *s);
-  }
-
-  if (*str) {
-    // 去掉后面的空格
-    int rel_len = strlen(str);
-
-    for (const char* p = str + rel_len - 1; p > str && isspace(*p); --p) {
-      --rel_len;
-    }
-
-    if (rel_len) data.push_back(std::string(str, rel_len));
-  }
-
-  return;
-}
 
 void Cchess::pushSpecific(int x, int y, vector<Tnode>& vCoop, nodeType specific) {
   if (x < 0 || x > SIZE - 1 || y < 0 || y > SIZE - 1) {
@@ -412,12 +365,9 @@ void Cchess::initGraph(int user) {
       }
     } 
   }
-}
 
-void Cchess::dj(int user) {
   m_dg[user]->Dijkstra(m_pos[user]->id);
 }
-
 
 void Cchess::genPath() {
   vector<thread> vecThread;
@@ -432,45 +382,6 @@ void Cchess::genPath() {
     it.join();
   }
 
-  vecThread.clear();
-
-  for(int index = 0;index < USER_NUM; ++index)
-  {
-    std::thread tThread(&Cchess::dj, this, index);
-    vecThread.push_back(std::move(tThread));
-  }
-
-  for(auto& it : vecThread)
-  {
-    it.join();
-  }
-  
-  #if 0
-  for (int u = 0; u < USER_NUM; ++u) {
-    for (int i = 0; i < SIZE; ++i) {
-      for (int j = 0; j < SIZE; ++j) {
-        vector<Tnode> vCoop;
-        getCoopTag(m_chess[i][j], vCoop);
-        for (auto it : vCoop) {
-          if (nodeType_block == it.type) continue;
-
-          if (it.type == nodeType_hb && it.owner == u) continue;
-
-          if (it.type == nodeType_player && it.owner != u) continue;
-
-          //权重 = 基础2 + 目的周边障碍比例*4
-          int weight = int(2 + it.neighbor * 4);
-
-          m_dg[u]->add_edge(m_chess[i][j].id, it.id, weight, false);
-        }
-      }
-    }
-  }
-
-  for (int u = 0; u < USER_NUM; ++u) {
-    m_dg[u]->Dijkstra(m_pos[u]->id);
-  }
-  #endif
 }
 
 void Cchess::initGeoSpace() {

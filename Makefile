@@ -2,7 +2,7 @@
 CC      = gcc
 CXX     = g++
 
-CFLAGS  =-g -O2 -std=c++11 -lstdc++ -lm -Wall -fpic
+CFLAGS  =-g -O2 -std=c++11 -pthread -lstdc++ -lm -Wall -fpic
 
 BASE_HOME       = src
 HDR     =$(BASE_HOME)
@@ -22,7 +22,7 @@ INCLUDE =$(patsubst %, -I%, $(HDR))
 
 all: $(TARGET)
 $(TARGET):$(OBJS)
-	$(CXX)  $^ -o $@ 
+	$(CXX)  $^ $(CFLAGS) -o $@ 
 
 
 -include $(DEPS)

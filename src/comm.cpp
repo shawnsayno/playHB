@@ -2,6 +2,7 @@
 using namespace std;
 
 void InplaceTrim(std::string& strValue) {
+  strValue.erase(strValue.find_last_not_of("\r\n") + 1);
   strValue.erase(0, strValue.find_first_not_of(" "));
   strValue.erase(strValue.find_last_not_of(" ") + 1);
 }

@@ -144,8 +144,8 @@ class Cchess {
   //疯狂堵路
   string crazyDu();
 
+  //初始化最短路径
   void initGraph(int user);
-  void dj(int user);
 
  private:
   Tnode m_chess[SIZE][SIZE];  //地图
