@@ -18,6 +18,7 @@ using std::vector;
 #define MONEY 200
 #define PACKETS 10
 #define USER_NUM 4
+#define MAX_ROUND 2000
 
 const int g_edge = (SIZE - 1) * (SIZE - 1) + (SIZE - 2) * 3 * 4 + 2 * 4;
 

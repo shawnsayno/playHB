@@ -562,11 +562,12 @@ bool Cchess::findTarget(Tnode& p, bool needNear) {
     if (it->owner == m_self) continue;
     Tnode tmp;
     if (m_setBlock.size() >= 1 && onewayOut(*it, tmp)) continue;
+    if (distance(*m_pos[m_self], *it) > (MAX_ROUND - m_curTurn + 1))  continue;
 
     int dis = distanceDG(m_self, *it);
     int value = dis - it->value;
-    // cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value
-    //     << endl;
+
+    // cout << "target:" << it->id << ",dis:" << dis << ",value:" << it->value << ",bias:" << value << endl;
     if (value < min) {
       bool near = true;
       if (needNear) {
